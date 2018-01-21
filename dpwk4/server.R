@@ -1,28 +1,44 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(reshape)
+library(dplyr)
 
-# Define server logic required to draw a histogram
+# Define a server for the Shiny app
 shinyServer(function(input, output) {
-   
-  output$distPlot <- renderPlot({
-    
-    # generate bins based on input$bins from ui.R
-    x    <- airquality[, 4] 
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
-    
-    # draw the histogram with the specified number of bins
-    hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    
-  })
   
+  # Fill in the spot we created for a plot
+  output$polutionPlot <- renderPlot({
+    
+    airdata <- readRDS(file = url("https://raw.githubusercontent.com/anthonymacey/dp/master/dpwk4/airdata.rds"))
+    
+    #Validate the input day by getting the largest day for a given month
+    selectday <- airdata[airdata$month==input$month, ]%>%
+      group_by(month)%>% 
+      summarise(day=max(day))
+    
+    selectday <- selectday$day
+    
+    if(input$day > selectday) {
+      selectday <- selectday
+    } else{
+      selectday <- input$day
+    }
+    
+    #Prepare data to plot
+    daymonth <- cast(airdata[which(airdata$month == input$month &
+                                                  airdata$day == selectday),], day ~ hour)
+    
+    daymonth$day <- NULL
+    daymonth <- as.matrix(daymonth)
+    
+    #Plot data
+    barplot(
+      height = daymonth,
+      main = paste("Hourly Data for ", selectday, "/", input$month, "/", "2017", sep =
+                     ""),
+      ylab = "NOX/PPB",
+      xlab = "Hour",
+      col = "Green"
+    )
+  })
 })
-
 
