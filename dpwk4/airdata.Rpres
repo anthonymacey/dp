@@ -1,0 +1,69 @@
+Oxides of Nitrogen (ppb) London Westminster 2017
+========================================================
+title: Oxides of Nitrogen (ppb) London Westminster 2017
+author: Anthony Macey 
+date: 21/1/2018
+autosize: true
+
+About the data
+========================================================
+
+The data shows a summary of air quality from the London Air Quality Network (LAQN), and pollution for 3 Westminster sites (Oxford Street, Covent Garden & Marylebone Road).
+
+The datasets used in application are sourced from this repoisory airdata.csv is a raw dataset from the [LAQN](http://www.londonair.org.uk) and airdata.rds is a summary used in the bar plots.
+
+The original dataset can be obtained from  [LAQN](http://www.londonair.org.uk/london/asp/dataspecies.asp?site1=WM6&site2=&site3=WM5&site4=&site5=MY1&site6=&day1=1&month1=jan&year1=2017&day2=31&month2=dec&year2=2017&period=15min&species=NOX&ratidate=&res=6&Submit=Replot+graph) but please respect their bandwidth.
+
+However the data is available from the my assignment github page [here](https://github.com/anthonymacey/dp/tree/master/dpwk4) as [airdata.csv](https://raw.githubusercontent.com/anthonymacey/dp/master/dpwk4/airdata.csv) and the summary data as [airdata.rds](https://raw.githubusercontent.com/anthonymacey/dp/master/dpwk4/airdata.rds) which has been pre-processed with [process.r](https://github.com/anthonymacey/dp/blob/master/dpwk4/process.R) to make the shiny app more responsive.
+
+Oxides of Nitrogen (ppb) Summary
+========================================================
+
+```{r, echo=FALSE}
+library(lubridate)
+library(dplyr)
+
+airdata <- read.csv(file = "https://raw.githubusercontent.com/anthonymacey/dp/master/dpwk4/airdata.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+airdata$ReadingDateTime  <- as.POSIXct(airdata$ReadingDateTime, format = "%d/%m/%Y %H:%M")
+airdata$month <- month(airdata$ReadingDateTime)
+airdata$hour <- hour(airdata$ReadingDateTime)
+airdata$day <- day(airdata$ReadingDateTime)
+
+airdata.nox <- airdata[complete.cases(airdata), ]%>%
+  group_by(month, day, hour)%>% 
+  summarise(value=sum(Value))
+```
+
+```{r, echo=FALSE}
+summary(airdata.nox)
+```
+
+Oxides of Nitrogen (ppb) Server Code
+========================================================
+
+```{r, echo=TRUE}
+library(reshape)
+# Get only one day of data to display
+daymonth <- cast(airdata.nox[which(airdata.nox$month == 7 &
+                                 airdata.nox$day == 18), ], day ~ hour)
+## Turn the daily data into an matrix
+daymonth$day <- NULL
+daymonth <- as.matrix(daymonth)
+```
+
+
+Conclusion
+========================================================
+
+The middle of the day seems to be consistantly more hazardous for Oxides of Nitrogen (ppb) however explore the dataset yourself with the [shiny app](https://swiss.shinyapps.io/dpwk4/).  This is an example from the 18/7/2017
+
+```{r, echo=FALSE}
+#Plot data
+barplot(
+  height = daymonth,
+  main = "Hourly Data for 18/7/2017",
+  ylab = "NOX/PPB",
+  xlab = "Hour",
+  col = "Green"
+)
+```
